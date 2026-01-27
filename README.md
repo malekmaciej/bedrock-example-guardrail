@@ -173,7 +173,7 @@ In addition to the Python example using Claude Sonnet 4.5, this repository inclu
 # Make sure AWS CLI is installed and configured
 aws --version
 
-# Optional: Install jq for better JSON parsing
+# Install jq (required for JSON processing)
 sudo apt-get install jq  # On Ubuntu/Debian
 # or
 brew install jq          # On macOS
@@ -208,7 +208,7 @@ The `mistral_example.sh` script shows how to:
 | Language | Python 3 with boto3 | Bash with AWS CLI |
 | API Format | Messages API | Prompt/Completion API |
 | Streaming | Supported | Not included |
-| Dependencies | boto3, python-dotenv | AWS CLI, jq (optional) |
+| Dependencies | boto3, python-dotenv | AWS CLI, jq |
 
 ## Terraform Configuration
 

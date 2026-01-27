@@ -21,7 +21,9 @@ set -e
 
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    source .env
+    set +a
 fi
 
 # Configuration - can be overridden via environment variables
@@ -42,7 +44,7 @@ REQUEST_FILE=$(mktemp /tmp/mistral_request.XXXXXX.json)
 RESPONSE_FILE=$(mktemp /tmp/mistral_response.XXXXXX.json)
 
 # Cleanup temporary files on exit
-trap "rm -f $REQUEST_FILE $RESPONSE_FILE" EXIT
+trap 'rm -f "$REQUEST_FILE" "$RESPONSE_FILE"' EXIT
 
 ################################################################################
 # Helper Functions
@@ -86,44 +88,61 @@ invoke_mistral_model() {
     local temperature="${3:-0.7}"
     local top_p="${4:-0.9}"
     
-    # Create request JSON for Mistral
-    cat > "$REQUEST_FILE" <<EOF
-{
-  "prompt": "$prompt",
-  "max_tokens": $max_tokens,
-  "temperature": $temperature,
-  "top_p": $top_p
-}
-EOF
+    # Validate numeric parameters
+    if ! [[ "$max_tokens" =~ ^[0-9]+$ ]]; then
+        print_error "max_tokens must be a number"
+        return 1
+    fi
     
-    # Build AWS CLI command
-    local cmd="aws bedrock-runtime invoke-model \
-        --region $AWS_REGION \
-        --model-id $MODEL_ID \
-        --body fileb://$REQUEST_FILE \
-        --content-type application/json \
-        --accept application/json"
+    # Create request JSON for Mistral using jq to safely escape prompt
+    jq -n \
+        --arg prompt "$prompt" \
+        --argjson max_tokens "$max_tokens" \
+        --argjson temperature "$temperature" \
+        --argjson top_p "$top_p" \
+        '{
+            prompt: $prompt,
+            max_tokens: $max_tokens,
+            temperature: $temperature,
+            top_p: $top_p
+        }' > "$REQUEST_FILE"
+    
+    # Build AWS CLI command as array
+    local aws_cmd=(
+        aws bedrock-runtime invoke-model
+        --region "$AWS_REGION"
+        --model-id "$MODEL_ID"
+        --body "fileb://$REQUEST_FILE"
+        --content-type application/json
+        --accept application/json
+    )
     
     # Add guardrail parameters if configured
     if [ -n "$GUARDRAIL_ID" ]; then
-        cmd="$cmd --guardrail-identifier $GUARDRAIL_ID"
+        aws_cmd+=(--guardrail-identifier "$GUARDRAIL_ID")
         if [ -n "$GUARDRAIL_VERSION" ]; then
-            cmd="$cmd --guardrail-version $GUARDRAIL_VERSION"
+            aws_cmd+=(--guardrail-version "$GUARDRAIL_VERSION")
         fi
     fi
     
-    cmd="$cmd $RESPONSE_FILE"
+    aws_cmd+=("$RESPONSE_FILE")
     
-    # Execute the command
-    if eval $cmd 2>&1 | grep -q "GuardrailIntervened\|ValidationException"; then
-        print_error "Request was blocked by guardrails or validation failed"
-        if [ -f "$RESPONSE_FILE" ]; then
-            cat "$RESPONSE_FILE" | jq -r '.' 2>/dev/null || cat "$RESPONSE_FILE"
+    # Execute the command and capture output
+    local error_output
+    error_output=$("${aws_cmd[@]}" 2>&1)
+    local exit_code=$?
+    
+    # Check for errors
+    if [ $exit_code -ne 0 ]; then
+        if echo "$error_output" | grep -q "GuardrailIntervened\|ValidationException"; then
+            print_error "Request was blocked by guardrails or validation failed"
+        else
+            print_error "AWS CLI command failed: $error_output"
         fi
         return 1
-    else
-        return 0
     fi
+    
+    return 0
 }
 
 # Function to extract and display response
@@ -178,8 +197,14 @@ fi
 
 # Check if jq is installed
 if ! command -v jq >/dev/null 2>&1; then
-    print_warning "jq is not installed. Install it for better JSON parsing (sudo apt-get install jq)"
+    print_error "jq is required for this script. Please install it:"
+    echo "  Ubuntu/Debian: sudo apt-get install jq"
+    echo "  macOS: brew install jq"
+    echo "  Or visit: https://jqlang.github.io/jq/download/"
+    exit 1
 fi
+
+print_success "jq is installed"
 
 # Check if AWS CLI is installed
 if ! command -v aws >/dev/null 2>&1; then
@@ -219,7 +244,7 @@ fi
 
 print_subheader "Example 2: Query with PII (should be blocked/anonymized)"
 
-PROMPT2="My email is john.doe@example.com and my phone is 555-1234. Can you help me?"
+PROMPT2="My email is john.doe@example.com and my phone is (555) 123-4567. Can you help me?"
 print_info "Prompt: $PROMPT2"
 echo ""
 
