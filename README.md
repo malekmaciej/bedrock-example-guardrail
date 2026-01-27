@@ -212,7 +212,7 @@ Embedding:
 - **Model**: Amazon Titan Text Embeddings V2
 - **Embedding Size**: 1024 dimensions
 - **Token Counting**: Shows input text token count
-- **No Guardrails**: Embeddings are generated directly without guardrail intervention
+- **Direct API Call**: This example generates embeddings directly without guardrails
 
 ## Mistral Model Example (Bash Script)
 
