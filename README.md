@@ -1,11 +1,12 @@
 # AWS Bedrock with Guardrails - Example Repository
 
 This repository demonstrates how to use Amazon Bedrock with Guardrails, featuring:
-- **Claude Sonnet 4.5** model integration
+- **Claude Sonnet 4.5** model integration (Python example)
+- **Mistral Large 3** model integration (Bash/AWS CLI example)
 - **Guardrails** for content filtering and safety
 - **Custom Inference Profile** for the eu-west-1 region
 - **Infrastructure as Code** using Terraform
-- **Python SDK** implementation with examples
+- **Python SDK** and **AWS CLI** implementation with examples
 
 ## Features
 
@@ -91,10 +92,16 @@ GUARDRAIL_VERSION=<guardrail_version from terraform output>
 INFERENCE_PROFILE_ID=<inference_profile_id from terraform output>
 ```
 
-### 4. Run the Example
+### 4. Run the Examples
 
+**Python Example (Claude Sonnet 4.5):**
 ```bash
 python bedrock_example.py
+```
+
+**Bash Example (Mistral Large 3):**
+```bash
+./mistral_example.sh
 ```
 
 ## Project Structure
@@ -105,7 +112,8 @@ python bedrock_example.py
 ├── requirements.txt          # Python dependencies
 ├── .env.example             # Environment variables template
 ├── .gitignore               # Git ignore rules
-├── bedrock_example.py       # Main Python example script
+├── bedrock_example.py       # Python example with Claude Sonnet 4.5
+├── mistral_example.sh       # Bash script example with Mistral Large 3
 └── terraform/               # Terraform configuration
     ├── main.tf              # Provider configuration
     ├── variables.tf         # Input variables
@@ -154,6 +162,53 @@ result = client.invoke_model(
     top_p=0.9
 )
 ```
+
+## Mistral Model Example (Bash Script)
+
+In addition to the Python example using Claude Sonnet 4.5, this repository includes a Bash script that demonstrates using the **Mistral Large 3** model (675B parameters) with AWS CLI.
+
+### Running the Mistral Example
+
+```bash
+# Make sure AWS CLI is installed and configured
+aws --version
+
+# Install jq (required for JSON processing)
+sudo apt-get install jq  # On Ubuntu/Debian
+# or
+brew install jq          # On macOS
+
+# Run the script
+./mistral_example.sh
+```
+
+### What the Script Demonstrates
+
+The `mistral_example.sh` script shows how to:
+- Use AWS CLI to invoke Mistral Large 3 model with guardrails
+- Handle different types of queries (safe, PII-containing, creative, technical)
+- Parse and display responses from the Bedrock API
+- Configure model parameters (temperature, max_tokens, top_p)
+- Apply guardrails for content filtering and safety
+
+### Script Features
+
+- **Color-coded output** for better readability
+- **Multiple examples** showcasing different query types
+- **Error handling** for guardrail interventions
+- **Automatic cleanup** of temporary files
+- **Environment variable support** from .env file
+- **Metadata display** showing model and guardrail information
+
+### Key Differences from Python Example
+
+| Feature | Python (bedrock_example.py) | Bash (mistral_example.sh) |
+|---------|----------------------------|---------------------------|
+| Model | Claude Sonnet 4.5 | Mistral Large 3 |
+| Language | Python 3 with boto3 | Bash with AWS CLI |
+| API Format | Messages API | Prompt/Completion API |
+| Streaming | Supported | Not included |
+| Dependencies | boto3, python-dotenv | AWS CLI, jq |
 
 ## Terraform Configuration
 
