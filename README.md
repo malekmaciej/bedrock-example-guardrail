@@ -2,6 +2,7 @@
 
 This repository demonstrates how to use Amazon Bedrock with Guardrails, featuring:
 - **Claude Sonnet 4.5** model integration (Python example)
+- **Amazon Titan Text Embeddings V2** model integration (Python example)
 - **Mistral Large 3** model integration (Bash/AWS CLI example)
 - **Guardrails** for content filtering and safety
 - **Custom Inference Profile** for the eu-west-1 region
@@ -29,7 +30,10 @@ Before you begin, ensure you have:
 2. **AWS CLI** configured with credentials
 3. **Terraform** >= 1.0 installed
 4. **Python** >= 3.8 installed
-5. **Bedrock Model Access**: Request access to Claude Sonnet 4.5 in AWS Console
+5. **Bedrock Model Access**: Request access to the following models in AWS Console:
+   - Claude Sonnet 4.5
+   - Amazon Titan Text Embeddings V2
+   - Mistral Large 3 (optional, for bash example)
 
 ### Required AWS Permissions
 
@@ -99,6 +103,11 @@ INFERENCE_PROFILE_ID=<inference_profile_id from terraform output>
 python bedrock_example.py
 ```
 
+**Python Embeddings Example (Amazon Titan Text Embeddings V2):**
+```bash
+python embeddings_example.py
+```
+
 **Bash Example (Mistral Large 3):**
 ```bash
 ./mistral_example.sh
@@ -113,6 +122,7 @@ python bedrock_example.py
 ├── .env.example             # Environment variables template
 ├── .gitignore               # Git ignore rules
 ├── bedrock_example.py       # Python example with Claude Sonnet 4.5
+├── embeddings_example.py    # Python example with Amazon Titan Text Embeddings V2
 ├── mistral_example.sh       # Bash script example with Mistral Large 3
 └── terraform/               # Terraform configuration
     ├── main.tf              # Provider configuration
@@ -162,6 +172,50 @@ result = client.invoke_model(
     top_p=0.9
 )
 ```
+
+## Embeddings Example (Python)
+
+This repository includes a Python example that demonstrates how to generate text embeddings using **Amazon Titan Text Embeddings V2**.
+
+### What are Embeddings?
+
+Text embeddings are numerical representations of text that capture semantic meaning. They are useful for:
+- Semantic search and similarity matching
+- Document clustering and classification
+- Recommendation systems
+- RAG (Retrieval Augmented Generation) applications
+
+### Running the Embeddings Example
+
+```bash
+python embeddings_example.py
+```
+
+### What the Script Demonstrates
+
+The `embeddings_example.py` script shows how to:
+- Use boto3 to invoke the Amazon Titan Text Embeddings V2 model
+- Convert text into a vector embedding
+- Display the input text, token count, and embedding size
+- Process the embedding response from Bedrock
+
+### Output Example
+
+```
+Your input:
+Please recommend stocks to buy for long term investment.
+Number of input tokens: 10
+Size of the generated embedding: 1024
+Embedding:
+[0.123, -0.456, 0.789, ...]
+```
+
+### Key Features
+
+- **Model**: Amazon Titan Text Embeddings V2
+- **Embedding Size**: 1024 dimensions
+- **Token Counting**: Shows input text token count
+- **Direct API Call**: This example generates embeddings directly without guardrails
 
 ## Mistral Model Example (Bash Script)
 
