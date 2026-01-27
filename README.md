@@ -30,7 +30,10 @@ Before you begin, ensure you have:
 2. **AWS CLI** configured with credentials
 3. **Terraform** >= 1.0 installed
 4. **Python** >= 3.8 installed
-5. **Bedrock Model Access**: Request access to Claude Sonnet 4.5 in AWS Console
+5. **Bedrock Model Access**: Request access to the following models in AWS Console:
+   - Claude Sonnet 4.5
+   - Amazon Titan Text Embeddings V2
+   - Mistral Large 3 (optional, for bash example)
 
 ### Required AWS Permissions
 
