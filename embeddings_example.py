@@ -11,7 +11,7 @@ client = session.client("bedrock-runtime", region_name="eu-west-1")
 model_id = "amazon.titan-embed-text-v2:0"
 
 # The text to convert to an embedding.
-input_text = "Please recommend stocks to buy for long term investment."
+input_text = "Explain how electric cars work in simple terms."
 
 # Create the request for the model.
 native_request = {"inputText": input_text}
