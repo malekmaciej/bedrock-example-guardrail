@@ -1,0 +1,16 @@
+# Example Terraform Variables
+# Copy this file to terraform.tfvars and customize as needed
+# Usage: terraform apply -var-file="terraform.tfvars"
+
+# AWS Region - eu-west-1 is required for the custom inference profile
+aws_region = "eu-west-1"
+
+# Guardrail Configuration
+guardrail_name = "example-guardrail"
+
+# Custom Inference Profile Name
+inference_profile_name = "example-sonnet-profile"
+
+# Model ID for Claude Sonnet 4.5
+# Note: This is the correct model ID for Sonnet 4.5 as of 2025
+model_id = "anthropic.claude-sonnet-4-20250514-v1:0"
