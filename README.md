@@ -3,7 +3,7 @@
 This repository demonstrates how to use Amazon Bedrock with Guardrails, featuring:
 - **Claude Sonnet 4.5** model integration (Python example)
 - **Amazon Titan Text Embeddings V2** model integration (Python example)
-- **Mistral Large 3** model integration (Bash/AWS CLI example)
+- **Mistral Large 3** model integration (Bash/AWS CLI and Python examples)
 - **Guardrails** for content filtering and safety
 - **Custom Inference Profile** for the eu-west-1 region
 - **Infrastructure as Code** using Terraform
@@ -33,7 +33,7 @@ Before you begin, ensure you have:
 5. **Bedrock Model Access**: Request access to the following models in AWS Console:
    - Claude Sonnet 4.5
    - Amazon Titan Text Embeddings V2
-   - Mistral Large 3 (optional, for bash example)
+   - Mistral Large 3 (optional, for Mistral examples)
 
 ### Required AWS Permissions
 
@@ -113,6 +113,11 @@ python embeddings_example.py
 ./mistral_example.sh
 ```
 
+**Python Example (Mistral Large 3):**
+```bash
+python mistral_example.py
+```
+
 ## Project Structure
 
 ```
@@ -124,6 +129,7 @@ python embeddings_example.py
 ├── bedrock_example.py       # Python example with Claude Sonnet 4.5
 ├── embeddings_example.py    # Python example with Amazon Titan Text Embeddings V2
 ├── mistral_example.sh       # Bash script example with Mistral Large 3
+├── mistral_example.py       # Python script example with Mistral Large 3
 └── terraform/               # Terraform configuration
     ├── main.tf              # Provider configuration
     ├── variables.tf         # Input variables
@@ -217,12 +223,13 @@ Embedding:
 - **Token Counting**: Shows input text token count
 - **Direct API Call**: This example generates embeddings directly without guardrails
 
-## Mistral Model Example (Bash Script)
+## Mistral Model Example (Bash and Python Scripts)
 
-In addition to the Python example using Claude Sonnet 4.5, this repository includes a Bash script that demonstrates using the **Mistral Large 3** model (675B parameters) with AWS CLI.
+In addition to the Python example using Claude Sonnet 4.5, this repository includes both Bash and Python scripts that demonstrate using the **Mistral Large 3** model (675B parameters).
 
-### Running the Mistral Example
+### Running the Mistral Examples
 
+**Bash Version:**
 ```bash
 # Make sure AWS CLI is installed and configured
 aws --version
@@ -236,10 +243,23 @@ brew install jq          # On macOS
 ./mistral_example.sh
 ```
 
-### What the Script Demonstrates
+**Python Version:**
+```bash
+# Make sure Python dependencies are installed
+pip install -r requirements.txt
 
-The `mistral_example.sh` script shows how to:
-- Use AWS CLI to invoke Mistral Large 3 model with guardrails
+# Run the script
+python mistral_example.py
+# or
+./mistral_example.py
+```
+
+### What the Scripts Demonstrate
+
+Both the `mistral_example.sh` (Bash) and `mistral_example.py` (Python) scripts show how to:
+- Invoke Mistral Large 3 model with guardrails
+  - Bash version uses AWS CLI
+  - Python version uses boto3 SDK
 - Handle different types of queries (safe, PII-containing, creative, technical)
 - Parse and display responses from the Bedrock API
 - Configure model parameters (temperature, max_tokens, top_p)
@@ -256,13 +276,13 @@ The `mistral_example.sh` script shows how to:
 
 ### Key Differences from Python Example
 
-| Feature | Python (bedrock_example.py) | Bash (mistral_example.sh) |
-|---------|----------------------------|---------------------------|
-| Model | Claude Sonnet 4.5 | Mistral Large 3 |
-| Language | Python 3 with boto3 | Bash with AWS CLI |
-| API Format | Messages API | Prompt/Completion API |
-| Streaming | Supported | Not included |
-| Dependencies | boto3, python-dotenv | AWS CLI, jq |
+| Feature | Python (bedrock_example.py) | Bash (mistral_example.sh) | Python (mistral_example.py) |
+|---------|----------------------------|---------------------------|---------------------------|
+| Model | Claude Sonnet 4.5 | Mistral Large 3 | Mistral Large 3 |
+| Language | Python 3 with boto3 | Bash with AWS CLI | Python 3 with boto3 |
+| API Format | Messages API | Prompt/Completion API | Prompt/Completion API |
+| Streaming | Supported | Not included | Not included |
+| Dependencies | boto3, python-dotenv | AWS CLI, jq | boto3, python-dotenv |
 
 ## Terraform Configuration
 
