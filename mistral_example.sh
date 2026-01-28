@@ -30,7 +30,7 @@ fi
 AWS_REGION="${AWS_REGION:-eu-west-1}"
 GUARDRAIL_ID="${GUARDRAIL_ID:-}"
 GUARDRAIL_VERSION="${GUARDRAIL_VERSION:-1}"
-MODEL_ID="${MODEL_ID:-mistral.mistral-large-3-675b-instruct}"
+MODEL_ID="${MISTRAL_MODEL_ID:-mistral.mistral-large-2402-v1:0}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -95,8 +95,10 @@ invoke_mistral_model() {
     fi
     
     # Create request JSON for Mistral using jq to safely escape prompt
+    # Mistral uses a specific instruction format
+    local formatted_prompt="<s>[INST] $prompt [/INST]"
     jq -n \
-        --arg prompt "$prompt" \
+        --arg prompt "$formatted_prompt" \
         --argjson max_tokens "$max_tokens" \
         --argjson temperature "$temperature" \
         --argjson top_p "$top_p" \

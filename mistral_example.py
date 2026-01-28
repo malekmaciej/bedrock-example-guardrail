@@ -28,11 +28,11 @@ load_dotenv()
 
 # ANSI color codes for terminal output
 class Colors:
-    RED = '\033[0;31m'
-    GREEN = '\033[0;32m'
-    YELLOW = '\033[1;33m'
-    BLUE = '\033[0;34m'
-    NC = '\033[0m'  # No Color
+    RED = "\033[0;31m"
+    GREEN = "\033[0;32m"
+    YELLOW = "\033[1;33m"
+    BLUE = "\033[0;34m"
+    NC = "\033[0m"  # No Color
 
 
 def print_header(text: str) -> None:
@@ -74,17 +74,17 @@ def print_error(text: str) -> None:
 
 class MistralBedrockClient:
     """Client for interacting with Mistral models on AWS Bedrock using Guardrails."""
-    
+
     def __init__(
         self,
         region: str = "eu-west-1",
         guardrail_id: Optional[str] = None,
         guardrail_version: Optional[str] = None,
-        model_id: str = "mistral.mistral-large-3-675b-instruct"
+        model_id: str = "mistral.mistral-large-2402-v1:0",
     ):
         """
         Initialize the Mistral Bedrock client with guardrails.
-        
+
         Args:
             region: AWS region (default: eu-west-1)
             guardrail_id: ID of the guardrail to use
@@ -93,109 +93,110 @@ class MistralBedrockClient:
         """
         self.region = region
         self.guardrail_id = guardrail_id or os.getenv("GUARDRAIL_ID")
-        self.guardrail_version = guardrail_version or os.getenv("GUARDRAIL_VERSION", "1")
+        self.guardrail_version = guardrail_version or os.getenv(
+            "GUARDRAIL_VERSION", "1"
+        )
         self.model_id = model_id
-        
+
         # Initialize Bedrock Runtime client
         self.bedrock_runtime = boto3.client(
-            service_name="bedrock-runtime",
-            region_name=self.region
+            service_name="bedrock-runtime", region_name=self.region
         )
-    
+
     def invoke_model(
         self,
         prompt: str,
         max_tokens: int = 2000,
         temperature: float = 0.7,
-        top_p: float = 0.9
+        top_p: float = 0.9,
     ) -> Dict[str, Any]:
         """
         Invoke the Mistral model with guardrails.
-        
+
         Args:
             prompt: The user prompt/question
             max_tokens: Maximum tokens in the response
             temperature: Temperature for response randomness (0-1)
             top_p: Top-p sampling parameter
-            
+
         Returns:
             Dictionary containing the response and metadata
         """
         # Validate numeric parameters
         if not isinstance(max_tokens, int) or max_tokens <= 0:
-            return {
-                "success": False,
-                "error": "max_tokens must be a positive integer"
-            }
-        
-        # Prepare the request body for Mistral
+            return {"success": False, "error": "max_tokens must be a positive integer"}
+
+        # Prepare the request body for Mistral (uses messages format)
         request_body = {
-            "prompt": prompt,
+            "prompt": f"<s>[INST] {prompt} [/INST]",
             "max_tokens": max_tokens,
             "temperature": temperature,
-            "top_p": top_p
+            "top_p": top_p,
         }
-        
+
         # Prepare the API call parameters
         api_params = {
             "modelId": self.model_id,
             "body": json.dumps(request_body),
             "contentType": "application/json",
-            "accept": "application/json"
+            "accept": "application/json",
         }
-        
+
         # Add guardrail configuration if available
         if self.guardrail_id:
             api_params["guardrailIdentifier"] = self.guardrail_id
             if self.guardrail_version:
                 api_params["guardrailVersion"] = self.guardrail_version
-        
+
         try:
             # Invoke the model
             response = self.bedrock_runtime.invoke_model(**api_params)
-            
+
             # Parse the response
             response_body = json.loads(response["body"].read())
-            
+
             # Extract the text response - try multiple possible response structures
             text_response = ""
             if "outputs" in response_body and len(response_body["outputs"]) > 0:
                 text_response = response_body["outputs"][0].get("text", "")
             elif "completion" in response_body:
                 text_response = response_body.get("completion", "")
-            
+
             return {
                 "success": True,
                 "response": text_response,
                 "stop_reason": response_body.get("stop_reason"),
                 "model_id": self.model_id,
                 "guardrail_applied": self.guardrail_id is not None,
-                "raw_response": response_body
+                "raw_response": response_body,
             }
-            
+
         except Exception as e:
             error_message = str(e)
             # Check if this is a guardrail intervention or validation error
-            if "GuardrailIntervened" in error_message or "ValidationException" in error_message:
+            if (
+                "GuardrailIntervened" in error_message
+                or "ValidationException" in error_message
+            ):
                 return {
                     "success": False,
                     "error": "Guardrail intervention or validation failed",
                     "message": "The request was blocked by guardrails or validation failed.",
-                    "details": error_message
+                    "details": error_message,
                 }
             else:
                 return {
                     "success": False,
                     "error": "API error",
                     "message": f"AWS Bedrock error: {error_message}",
-                    "details": error_message
+                    "details": error_message,
                 }
-    
+
     def display_response(self, result: Dict[str, Any]) -> None:
         """Display the response from the model."""
         if result.get("response"):
             print(result["response"])
-    
+
     def display_metadata(self, result: Dict[str, Any]) -> None:
         """Display metadata about the response."""
         if result.get("success"):
@@ -213,7 +214,7 @@ class MistralBedrockClient:
 def check_aws_credentials(region: str) -> bool:
     """Check if AWS credentials are properly configured."""
     try:
-        sts = boto3.client('sts', region_name=region)
+        sts = boto3.client("sts", region_name=region)
         sts.get_caller_identity()
         return True
     except Exception:
@@ -222,48 +223,47 @@ def check_aws_credentials(region: str) -> bool:
 
 def main():
     """Main function demonstrating usage of the Mistral Bedrock Client."""
-    
+
     # Configuration - can be overridden via environment variables
     aws_region = os.getenv("AWS_REGION", "eu-west-1")
-    model_id = os.getenv("MODEL_ID", "mistral.mistral-large-3-675b-instruct")
-    
+    model_id = os.getenv("MISTRAL_MODEL_ID", "mistral.mistral-large-2402-v1:0")
+
     print_header("AWS Bedrock with Guardrails - Mistral Example")
-    
+
     # Initialize the client (it will read guardrail settings from env vars)
-    client = MistralBedrockClient(
-        region=aws_region,
-        model_id=model_id
-    )
-    
+    client = MistralBedrockClient(region=aws_region, model_id=model_id)
+
     # Display configuration
     print_info("Configuration:")
     print_success(f"Region: {aws_region}")
     print_success(f"Model: {model_id}")
-    
+
     if client.guardrail_id:
         print_success(f"Guardrail ID: {client.guardrail_id}")
         print_success(f"Guardrail Version: {client.guardrail_version}")
     else:
         print_warning("No guardrail configured. Set GUARDRAIL_ID in .env file")
-    
+
     # Check if AWS credentials are valid
     if not check_aws_credentials(aws_region):
-        print_error("AWS credentials not configured or invalid. Run 'aws configure' first.")
+        print_error(
+            "AWS credentials not configured or invalid. Run 'aws configure' first."
+        )
         sys.exit(1)
-    
+
     print_success("AWS credentials validated")
-    
+
     # -------------------------------------------------------------------------
     # Example 1: Safe Query
     # -------------------------------------------------------------------------
     print_subheader("Example 1: Safe Query")
-    
+
     prompt1 = "What is the capital of France?"
     print_info(f"Prompt: {prompt1}")
     print()
-    
+
     result1 = client.invoke_model(prompt1, max_tokens=1000, temperature=0.7, top_p=0.9)
-    
+
     if result1["success"]:
         print_success("Response:")
         client.display_response(result1)
@@ -272,18 +272,18 @@ def main():
         print_error("Request failed")
         if result1.get("message"):
             print(f"Error: {result1['message']}")
-    
+
     # -------------------------------------------------------------------------
     # Example 2: Query with PII (should be blocked/anonymized)
     # -------------------------------------------------------------------------
     print_subheader("Example 2: Query with PII (should be blocked/anonymized)")
-    
+
     prompt2 = "My email is john.doe@example.com and my phone is (555) 123-4567. Can you help me?"
     print_info(f"Prompt: {prompt2}")
     print()
-    
+
     result2 = client.invoke_model(prompt2, max_tokens=1000, temperature=0.7, top_p=0.9)
-    
+
     if result2["success"]:
         print_success("Response (PII may be filtered):")
         client.display_response(result2)
@@ -292,18 +292,18 @@ def main():
         print_error("Request was blocked by guardrails (expected behavior for PII)")
         if result2.get("message"):
             print(f"Error: {result2['message']}")
-    
+
     # -------------------------------------------------------------------------
     # Example 3: Creative Query
     # -------------------------------------------------------------------------
     print_subheader("Example 3: Creative Query")
-    
+
     prompt3 = "Write a short poem about technology and innovation."
     print_info(f"Prompt: {prompt3}")
     print()
-    
+
     result3 = client.invoke_model(prompt3, max_tokens=1500, temperature=0.8, top_p=0.95)
-    
+
     if result3["success"]:
         print_success("Response:")
         client.display_response(result3)
@@ -312,18 +312,18 @@ def main():
         print_error("Request failed")
         if result3.get("message"):
             print(f"Error: {result3['message']}")
-    
+
     # -------------------------------------------------------------------------
     # Example 4: Technical Query
     # -------------------------------------------------------------------------
     print_subheader("Example 4: Technical Query")
-    
+
     prompt4 = "Explain the concept of machine learning in simple terms."
     print_info(f"Prompt: {prompt4}")
     print()
-    
+
     result4 = client.invoke_model(prompt4, max_tokens=1000, temperature=0.5, top_p=0.9)
-    
+
     if result4["success"]:
         print_success("Response:")
         client.display_response(result4)
@@ -332,14 +332,14 @@ def main():
         print_error("Request failed")
         if result4.get("message"):
             print(f"Error: {result4['message']}")
-    
+
     # -------------------------------------------------------------------------
     # Summary
     # -------------------------------------------------------------------------
     print_header("Examples Completed!")
-    
+
     print_info("Notes:")
-    print("  • Mistral Large 3 is a powerful 675B parameter model")
+    print("  • Mistral Large (24.02) is a powerful language model")
     print("  • Guardrails help ensure safe and appropriate responses")
     print("  • Adjust temperature (0.0-1.0) for more creative or focused responses")
     print("  • Check AWS Bedrock documentation for more model options")
