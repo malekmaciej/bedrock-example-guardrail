@@ -33,7 +33,7 @@ Before you begin, ensure you have:
 5. **Bedrock Model Access**: Request access to the following models in AWS Console:
    - Claude Sonnet 4.5
    - Amazon Titan Text Embeddings V2
-   - Mistral Large 3 (optional, for bash example)
+   - Mistral Large 3 (optional, for Mistral examples)
 
 ### Required AWS Permissions
 
@@ -257,7 +257,9 @@ python mistral_example.py
 ### What the Scripts Demonstrate
 
 Both the `mistral_example.sh` (Bash) and `mistral_example.py` (Python) scripts show how to:
-- Use AWS CLI to invoke Mistral Large 3 model with guardrails
+- Invoke Mistral Large 3 model with guardrails
+  - Bash version uses AWS CLI
+  - Python version uses boto3 SDK
 - Handle different types of queries (safe, PII-containing, creative, technical)
 - Parse and display responses from the Bedrock API
 - Configure model parameters (temperature, max_tokens, top_p)

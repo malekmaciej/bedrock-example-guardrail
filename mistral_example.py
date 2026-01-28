@@ -92,8 +92,8 @@ class MistralBedrockClient:
             model_id: Model ID for Mistral
         """
         self.region = region
-        self.guardrail_id = guardrail_id
-        self.guardrail_version = guardrail_version
+        self.guardrail_id = guardrail_id or os.getenv("GUARDRAIL_ID")
+        self.guardrail_version = guardrail_version or os.getenv("GUARDRAIL_VERSION", "1")
         self.model_id = model_id
         
         # Initialize Bedrock Runtime client
@@ -187,16 +187,14 @@ class MistralBedrockClient:
                 return {
                     "success": False,
                     "error": "API error",
-                    "message": f"AWS CLI command failed: {error_message}",
+                    "message": f"AWS Bedrock error: {error_message}",
                     "details": error_message
                 }
     
     def display_response(self, result: Dict[str, Any]) -> None:
         """Display the response from the model."""
-        if result.get("success") and result.get("response"):
+        if result.get("response"):
             print(result["response"])
-        elif not result.get("success"):
-            print_error(f"No response or error occurred")
     
     def display_metadata(self, result: Dict[str, Any]) -> None:
         """Display metadata about the response."""
@@ -227,20 +225,24 @@ def main():
     
     # Configuration - can be overridden via environment variables
     aws_region = os.getenv("AWS_REGION", "eu-west-1")
-    guardrail_id = os.getenv("GUARDRAIL_ID")
-    guardrail_version = os.getenv("GUARDRAIL_VERSION", "1")
     model_id = os.getenv("MODEL_ID", "mistral.mistral-large-3-675b-instruct")
     
     print_header("AWS Bedrock with Guardrails - Mistral Example")
+    
+    # Initialize the client (it will read guardrail settings from env vars)
+    client = MistralBedrockClient(
+        region=aws_region,
+        model_id=model_id
+    )
     
     # Display configuration
     print_info("Configuration:")
     print_success(f"Region: {aws_region}")
     print_success(f"Model: {model_id}")
     
-    if guardrail_id:
-        print_success(f"Guardrail ID: {guardrail_id}")
-        print_success(f"Guardrail Version: {guardrail_version}")
+    if client.guardrail_id:
+        print_success(f"Guardrail ID: {client.guardrail_id}")
+        print_success(f"Guardrail Version: {client.guardrail_version}")
     else:
         print_warning("No guardrail configured. Set GUARDRAIL_ID in .env file")
     
@@ -250,14 +252,6 @@ def main():
         sys.exit(1)
     
     print_success("AWS credentials validated")
-    
-    # Initialize the client
-    client = MistralBedrockClient(
-        region=aws_region,
-        guardrail_id=guardrail_id,
-        guardrail_version=guardrail_version,
-        model_id=model_id
-    )
     
     # -------------------------------------------------------------------------
     # Example 1: Safe Query
@@ -276,6 +270,8 @@ def main():
         client.display_metadata(result1)
     else:
         print_error("Request failed")
+        if result1.get("message"):
+            print(f"Error: {result1['message']}")
     
     # -------------------------------------------------------------------------
     # Example 2: Query with PII (should be blocked/anonymized)
@@ -294,6 +290,8 @@ def main():
         client.display_metadata(result2)
     else:
         print_error("Request was blocked by guardrails (expected behavior for PII)")
+        if result2.get("message"):
+            print(f"Error: {result2['message']}")
     
     # -------------------------------------------------------------------------
     # Example 3: Creative Query
@@ -312,6 +310,8 @@ def main():
         client.display_metadata(result3)
     else:
         print_error("Request failed")
+        if result3.get("message"):
+            print(f"Error: {result3['message']}")
     
     # -------------------------------------------------------------------------
     # Example 4: Technical Query
@@ -330,6 +330,8 @@ def main():
         client.display_metadata(result4)
     else:
         print_error("Request failed")
+        if result4.get("message"):
+            print(f"Error: {result4['message']}")
     
     # -------------------------------------------------------------------------
     # Summary
