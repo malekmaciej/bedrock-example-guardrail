@@ -69,7 +69,7 @@ resource "aws_bedrock_guardrail" "example_guardrail" {
 
   # Sensitive Information Filters
   sensitive_information_policy_config {
-    # PII entities to redact
+    # PII entities to block (not anonymize to avoid false positives)
     pii_entities_config {
       action = "BLOCK"
       type   = "EMAIL"
@@ -85,15 +85,8 @@ resource "aws_bedrock_guardrail" "example_guardrail" {
       type   = "CREDIT_DEBIT_CARD_NUMBER"
     }
 
-    pii_entities_config {
-      action = "ANONYMIZE"
-      type   = "NAME"
-    }
-
-    pii_entities_config {
-      action = "ANONYMIZE"
-      type   = "ADDRESS"
-    }
+    # Note: NAME and ADDRESS anonymization removed to prevent false positives
+    # with general knowledge questions (e.g., "France", "Paris")
   }
 
   # Word Policy Configuration - Block specific words or phrases
@@ -120,22 +113,15 @@ resource "aws_bedrock_guardrail_version" "example_version" {
   description   = "Production version of example guardrail"
 }
 
-# Custom Inference Profile for eu-west-1 region
-resource "aws_bedrock_custom_model_inference_profile" "example_profile" {
-  inference_profile_name = var.inference_profile_name
-  description            = "Custom inference profile for Sonnet 4.5 in eu-west-1"
-  model_source           = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.model_id}"
-
-  tags = {
-    Name        = var.inference_profile_name
-    Environment = "example"
-    ManagedBy   = "Terraform"
-  }
+# Reference the AWS-managed EU Inference Profile for Claude Sonnet 4.5
+# This is a system-defined profile that routes across EU regions
+data "aws_bedrock_inference_profile" "eu_sonnet_45" {
+  inference_profile_id = "eu.anthropic.claude-sonnet-4-5-20250929-v1:0"
 }
 
 # IAM Role for Bedrock access (if needed for applications)
 resource "aws_iam_role" "bedrock_execution_role" {
-  name               = "bedrock-guardrail-execution-role"
+  name = "bedrock-guardrail-execution-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

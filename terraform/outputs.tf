@@ -14,13 +14,13 @@ output "guardrail_version" {
 }
 
 output "inference_profile_arn" {
-  description = "ARN of the custom inference profile"
-  value       = aws_bedrock_custom_model_inference_profile.example_profile.inference_profile_arn
+  description = "ARN of the EU Sonnet 4.5 inference profile"
+  value       = data.aws_bedrock_inference_profile.eu_sonnet_45.inference_profile_arn
 }
 
 output "inference_profile_id" {
-  description = "ID of the custom inference profile"
-  value       = aws_bedrock_custom_model_inference_profile.example_profile.inference_profile_id
+  description = "ID of the EU Sonnet 4.5 inference profile"
+  value       = data.aws_bedrock_inference_profile.eu_sonnet_45.inference_profile_id
 }
 
 output "region" {
